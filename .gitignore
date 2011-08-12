@@ -46,6 +46,12 @@
 /include/generated/
 /lib/asm-offsets.s
 
+#build directory
+/build/
+
+#source insight directory
+/sc/
+
 # stgit generated dirs
 patches-*
 .stgit-edit.txt

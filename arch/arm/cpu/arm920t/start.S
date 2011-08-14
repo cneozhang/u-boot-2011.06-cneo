@@ -239,10 +239,11 @@ copyex:
 /*
  * Boot from NAND flash
  */
+#if CONFIG_CMD_NAND
 #define LENGTH_UBOOT 0x60000
 #define NAND_CTL_BASE 0x4E000000
 	
-#ifdef CONFIG_S3C2440
+# ifdef CONFIG_S3C2440
 
 #define oNFCONF 0x00
 #define oNFCONT 0x04
@@ -319,9 +320,9 @@ go_next:
 notmatch:
 loop3:
 	b	loop3
-#endif
+# endif /*CONFIG_S3C2440 */
 	
-#ifdef	CONFIG_S3C2410
+# ifdef	CONFIG_S3C2410
 	
 	/* Offset */
 #define oNFCONF 0x00
@@ -389,8 +390,8 @@ notmatch:
 loop3:
 	b	loop3
 
-#endif
-
+# endif /* CONFIG_S3C2410 */
+#endif /* CONFIG_CMD_NAND */
 
 
 nor_boot:

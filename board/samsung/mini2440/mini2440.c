@@ -38,10 +38,21 @@ DECLARE_GLOBAL_DATA_PTR;
 #define M_MDIV	0xC3
 #define M_PDIV	0x4
 #define M_SDIV	0x1
-#elif FCLK_SPEED==1		/* Fout = 202.8MHz */
+
+#elif FCLK_SPEED==1
+# ifdef CONFIG_S3C2410
+/* Fout = 202.8MHz */
 #define M_MDIV	0xA1
 #define M_PDIV	0x3
 #define M_SDIV	0x1
+# endif
+
+# ifdef CONFIG_S3C2440
+/* Fout = 405MHz */
+#define M_MDIV 0x7f	
+#define M_PDIV 0x2
+#define M_SDIV 0x1
+# endif
 #endif
 
 #define USB_CLOCK 1
@@ -50,9 +61,18 @@ DECLARE_GLOBAL_DATA_PTR;
 #define U_M_MDIV	0xA1
 #define U_M_PDIV	0x3
 #define U_M_SDIV	0x1
+
 #elif USB_CLOCK==1
+# ifdef CONFIG_S3C2410
 #define U_M_MDIV	0x48
 #define U_M_PDIV	0x3
+# endif
+
+# ifdef CONFIG_S3C2440
+#define U_M_MDIV 0x38
+#define U_M_PDIV 0x2
+# endif
+
 #define U_M_SDIV	0x2
 #endif
 
@@ -92,9 +112,10 @@ int board_early_init_f(void)
 
 	/* set up the I/O ports */
 	writel(0x007FFFFF, &gpio->gpacon);
-	writel(0x00044555, &gpio->gpbcon);
+	writel(0x00295551, &gpio->gpbcon);
 	writel(0x000007FF, &gpio->gpbup);
-	writel(0xAAAAAAAA, &gpio->gpccon);
+	writel(0xAAAAA6AA, &gpio->gpccon);
+	writel( readl(&gpio->gpcdat)&(~(1<<5)),&gpio->gpcdat);
 	writel(0x0000FFFF, &gpio->gpcup);
 	writel(0xAAAAAAAA, &gpio->gpdcon);
 	writel(0x0000FFFF, &gpio->gpdup);

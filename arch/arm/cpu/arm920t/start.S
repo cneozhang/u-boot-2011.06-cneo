@@ -75,10 +75,6 @@ _fiq:			.word fiq
 _TEXT_BASE:
 	.word	CONFIG_SYS_TEXT_BASE
 
-.globl _armboot_start
-_armboot_start:
-	.word _start
-
 /*
  * These are defined in the board-specific linker script.
  * Subtracting _start from them lets the linker put their
@@ -165,21 +161,21 @@ copyex:
 	mov	r1, #0xffffffff
 	ldr	r0, =INTMSK
 	str	r1, [r0]
-# if defined(CONFIG_S3C2410)
+# ifdef CONFIG_S3C2410
 	ldr	r1, =0x3ff
 	ldr	r0, =INTSUBMSK
 	str	r1, [r0]
 # endif
 
-# if defined(CONFIG_S3C2440)
+# ifdef CONFIG_S3C2440
 	ldr r1, =0x7fff
 	ldr r0, =INTSUBMSK
 	str r1, [r0]
 # endif
 
-# if defined(CONFIG_S3C2440)
+# ifdef CONFIG_S3C2440
 	/* FCLK:HCLK:PCLK = 1:4:8 */
-	/* default FCLK is  */
+	/* default FCLK is 405MHz */
 #define CLK_CTL_BASE	0x4C000000
 #define MDIV_405	0x7f << 12
 #define PSDIV_405	0x21
@@ -200,7 +196,6 @@ copyex:
 	add r2, r2, #PSDIV_405	
 	str r2, [r1, #0x04]
 
-
 # else
 	/* FCLK:HCLK:PCLK = 1:2:4 */
 	/* default FCLK is 120 MHz ! */
@@ -217,182 +212,6 @@ copyex:
 #ifndef CONFIG_SKIP_LOWLEVEL_INIT
 	bl	cpu_init_crit
 #endif
-
-/*
- * Check if boot from RAM
- */
-	adr	r0, _start		/* r0 <- current position of code   */
-	ldr	r1, _TEXT_BASE
-	cmp	r0, r1
-	beq	stack_setup /* boot from RAM */
-
-/*
- * Check boot from NAND flash or NOR flash
- */
-#define BWSCON 0x48000000
-	ldr r0, =BWSCON
-	ldr r0, [r0]	
-	ands r0, r0, #6    
-	cmp r0, #0	  
-	bne nor_boot
-
-/*
- * Boot from NAND flash
- */
-#if CONFIG_CMD_NAND
-#define LENGTH_UBOOT 0x60000
-#define NAND_CTL_BASE 0x4E000000
-	
-# ifdef CONFIG_S3C2440
-
-#define oNFCONF 0x00
-#define oNFCONT 0x04
-#define oNFCMD  0x08
-#define oNFSTAT 0x20
-	
-	/* Config NAND flash */
-	mov r1, #NAND_CTL_BASE
-	ldr r2, =( (3<<12)|(7<<8)|(7<<4)|(0<<0) )
-	str r2, [r1, #oNFCONF]
-	ldr r2, [r1, #oNFCONF]
-
-	/* Enable chip select */
-	ldr r2, =( (1<<4)|(0<<1)|(1<<0) )
-	str r2, [r1, #oNFCONT]
-	ldr r2, [r1, #oNFCONT]
-
-	/* clear RnB  */
-	ldr r2, =(0x6)
-	str r2, [r1, #oNFSTAT]
-	ldr r2, [r1, #oNFSTAT]
-
-	/* RESET command */
-	mov r2, #0xff
-	strb	r2, [r1, #oNFCMD]
-	
-	/* Some delay */
-	mov r3, #0
-nand1: 
-	add r3, r3, #0x1
-	cmp r3, #0xa
-	blt nand1
-	
-	/* Wait until ready */
-nand2:
-	ldr r2, [r1, #oNFSTAT]
-	tst r2, #0x4
-	beq nand2
-		
-	/* Disable chip select */
-	ldr r2, [r1, #oNFCONT]
-	orr r2, r2, #0x2
-	str r2, [r1, #oNFCONT]
-	
-	/* Get read to call nand_read() */
-	ldr sp, DW_STACK_START
-	mov fp, #0	/* no previous frame */
-
-	/* Relocate from NAND flash to RAM */
-	ldr r0, =TEXT_BASE
-	mov r1, #0x0
-	mov r2, #LENGTH_UBOOT
-	bl	nand_read_ll
-	tst r0, #0x0
-	beq ok_nand_read
-
-bad_nand_read:
-loop2:
-	b	loop2	@ infinite loop
-ok_nand_read:
-	@ verify
-	mov r0, #0
-	ldr r1, =TEXT_BASE
-	mov r2, #0x400	@ 4 bytes * 1024 = 4K-bytes
-go_next:
-	ldr r3, [r0], #4
-	ldr r4, [r1], #4
-	teq r3, r4
-	bne notmatch
-	subs	r2, r2, #4
-	beq stack_setup
-	bne go_next
-
-notmatch:
-loop3:
-	b	loop3
-# endif /*CONFIG_S3C2440 */
-	
-# ifdef	CONFIG_S3C2410
-	
-	/* Offset */
-#define oNFCONF 0x00
-#define oNFCMD 0x04
-#define oNFSTAT 0x10
-	
-	/* Configure NAND */
-	mov r1, #NAND_CTL_BASE
-	ldr r2, =0xf830 @ initial value
-	str r2, [r1, #oNFCONF]
-	ldr r2, [r1, #oNFCONF]
-	bic r2, r2, #0x800	@ enable chip
-	str r2, [r1, #oNFCONF]
-	mov r2, #0xff		@ RESET command
-	strb	r2, [r1, #oNFCMD]
-	
-	
-	mov r3, #0	@ wait
-nand1:
-	add r3, r3, #0x1
-	cmp r3, #0xa
-	blt nand1
-
-nand2:
-	ldr r2, [r1, #oNFSTAT]	@ wait ready
-	tst r2, #0x1
-	beq nand2
-	
-	ldr r2, [r1, #oNFCONF]
-	orr r2, r2, #0x800	@ disable chip
-	str r2, [r1, #oNFCONF]
-	
-	/* get read to call nand_read() */
-	ldr sp, DW_STACK_START
-	mov fp, #0	@ no previous frame
-	
-	@ copy U-Boot to RAM
-	ldr r0, =TEXT_BASE
-	mov r1, #0x0
-	mov r2, #LENGTH_UBOOT
-	bl	nand_read_ll
-	tst r0, #0x0
-	beq ok_nand_read
-
-bad_nand_read:
-loop2:
-	b	loop2	@ infinite loop
-
-
-ok_nand_read:
-	@ verify
-	mov r0, #0
-	ldr r1, =TEXT_BASE
-	mov r2, #0x400	@ 4 bytes * 1024 = 4K-bytes
-go_next:
-	ldr r3, [r0], #4
-	ldr r4, [r1], #4
-	teq r3, r4
-	bne notmatch
-	subs	r2, r2, #4
-	beq stack_setup
-	bne go_next
-
-notmatch:
-loop3:
-	b	loop3
-
-# endif /* CONFIG_S3C2410 */
-#endif /* CONFIG_CMD_NAND */
-
 
 nor_boot:
 /* Set stackpointer in internal RAM to call board_init_f */

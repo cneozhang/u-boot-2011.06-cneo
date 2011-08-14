@@ -279,7 +279,7 @@ void board_init_f (ulong bootflag)
 
 	memset ((void*)gd, 0, sizeof (gd_t));
 
-	gd->mon_len = _bss_end_ofs;
+	gd->mon_len = _bss_end_ofs; /* monitor size */
 
 	for (init_fnc_ptr = init_sequence; *init_fnc_ptr; ++init_fnc_ptr) {
 		if ((*init_fnc_ptr)() != 0) {
@@ -410,7 +410,7 @@ void board_init_f (ulong bootflag)
 	dram_init_banksize();
 	display_dram_config();	/* and display it */
 
-	gd->relocaddr = addr;
+	gd->relocaddr = addr; /* U-BOOT relocate addr */
 	gd->start_addr_sp = addr_sp;
 	gd->reloc_off = addr - _TEXT_BASE;
 	debug ("relocation Offset is: %08lx\n", gd->reloc_off);

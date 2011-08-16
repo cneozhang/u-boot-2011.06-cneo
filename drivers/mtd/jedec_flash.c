@@ -357,7 +357,7 @@ static const struct amd_flash_info jedec_table[] = {
 		},
 		.DevSize	= SIZE_2MiB,
 		.CmdSet 	= P_ID_AMD_STD,
-		.NumEraseRegions= 1,
+		.NumEraseRegions= 4,
 		.regions	= {
 			ERASEINFO(0x10000,6),  /* 6  blocks */
 			ERASEINFO(0x10000,10), /* 10 blocks */

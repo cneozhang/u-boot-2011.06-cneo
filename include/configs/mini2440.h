@@ -128,7 +128,7 @@
  * Miscellaneous configurable options
  */
 #define CONFIG_SYS_LONGHELP		/* undef to save memory */
-#define CONFIG_SYS_PROMPT	"MINI2440 # "
+#define CONFIG_SYS_PROMPT	"mini2440 # "
 #define CONFIG_SYS_CBSIZE	256
 /* Print Buffer Size */
 #define CONFIG_SYS_PBSIZE	(CONFIG_SYS_CBSIZE + \
@@ -183,7 +183,7 @@
 #define CONFIG_SYS_FLASH_CFI
 #define CONFIG_FLASH_CFI_DRIVER
 #define CONFIG_FLASH_CFI_LEGACY
-#define CONFIG_SYS_CFI_FLASH_CONFIG_REGS { 0xFFFF }
+//#define CONFIG_SYS_CFI_FLASH_CONFIG_REGS { 0xFFFF }
 #define CONFIG_SYS_FLASH_LEGACY_1024Kx16
 #define CONFIG_FLASH_SHOW_PROGRESS	45
 
@@ -191,7 +191,7 @@
 #define CONFIG_SYS_FLASH_BANKS_LIST     { CONFIG_SYS_FLASH_BASE }
 #define CONFIG_SYS_MAX_FLASH_SECT	(512)
 
-#define CONFIG_ENV_ADDR			(CONFIG_SYS_FLASH_BASE + 0x070000)
+#define CONFIG_ENV_ADDR			(CONFIG_SYS_FLASH_BASE + 0x1f0000) /* at the end block */
 #define CONFIG_ENV_IS_IN_FLASH
 #define CONFIG_ENV_SIZE			0x10000
 /* allow to overwrite serial and ethaddr */

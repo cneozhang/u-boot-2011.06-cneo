@@ -1165,7 +1165,7 @@ void flash_print_info (flash_info_t * info)
 		return;
 	}
 
-	printf ("%s flash (%d x %d)",
+	printf ("%s flash (portwidth: x %d chipwidth: x %d)",
 		info->name,
 		(info->portwidth << 3), (info->chipwidth << 3));
 	if (info->size < 1024*1024)

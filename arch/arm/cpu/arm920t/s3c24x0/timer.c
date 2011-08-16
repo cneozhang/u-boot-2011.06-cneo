@@ -35,8 +35,8 @@
 #include <asm/io.h>
 #include <asm/arch/s3c24x0_cpu.h>
 
-int timer_load_val = 0;
-static ulong timer_clk;
+DECLARE_GLOBAL_DATA_PTR;
+
 
 /* macro to read the 16 bit timer */
 static inline ulong READ_TIMER(void)
@@ -46,9 +46,6 @@ static inline ulong READ_TIMER(void)
 	return readl(&timers->tcnto4) & 0xffff;
 }
 
-static ulong timestamp;
-static ulong lastdec;
-
 int timer_init(void)
 {
 	struct s3c24x0_timers *timers = s3c24x0_get_base_timers();
@@ -57,25 +54,18 @@ int timer_init(void)
 	/* use PWM Timer 4 because it has no output */
 	/* prescaler for Timer 4 is 16 */
 	writel(0x0f00, &timers->tcfg0);
-	if (timer_load_val == 0) {
-		/*
-		 * for 10 ms clock period @ PCLK with 4 bit divider = 1/2
-		 * (default) and prescaler = 16. Should be 10390
-		 * @33.25MHz and 15625 @ 50 MHz
-		 */
-		timer_load_val = get_PCLK() / (2 * 16 * 100);
-		timer_clk = get_PCLK() / (2 * 16);
-	}
+	gd->timer_rate_hz = get_PCLK() /(2*16*100);
+	gd->tbl = get_PCLK() / (2 * 16);
 	/* load value for 10 ms timeout */
-	lastdec = timer_load_val;
-	writel(timer_load_val, &timers->tcntb4);
+	gd->lastinc = gd->timer_rate_hz;
+	writel(gd->timer_rate_hz, &timers->tcntb4);
 	/* auto load, manual update of timer 4 */
 	tmr = (readl(&timers->tcon) & ~0x0700000) | 0x0600000;
 	writel(tmr, &timers->tcon);
 	/* auto load, start timer 4 */
 	tmr = (tmr & ~0x0700000) | 0x0500000;
 	writel(tmr, &timers->tcon);
-	timestamp = 0;
+	gd->timer_reset_value = 0;
 
 	return (0);
 }
@@ -96,7 +86,7 @@ ulong get_timer(ulong base)
 
 void set_timer(ulong t)
 {
-	timestamp = t;
+	gd->timer_reset_value = t;
 }
 
 void __udelay (unsigned long usec)
@@ -105,7 +95,7 @@ void __udelay (unsigned long usec)
 	ulong start = get_ticks();
 
 	tmo = usec / 1000;
-	tmo *= (timer_load_val * 100);
+	tmo *= (gd->timer_rate_hz * 100);
 	tmo /= 1000;
 
 	while ((ulong) (get_ticks() - start) < tmo)
@@ -115,15 +105,15 @@ void __udelay (unsigned long usec)
 void reset_timer_masked(void)
 {
 	/* reset time */
-	lastdec = READ_TIMER();
-	timestamp = 0;
+	gd->lastinc = READ_TIMER();
+	gd->timer_reset_value = 0;
 }
 
 ulong get_timer_masked(void)
 {
 	ulong tmr = get_ticks();
 
-	return tmr / (timer_clk / CONFIG_SYS_HZ);
+	return tmr / (gd->tbl / CONFIG_SYS_HZ);
 }
 
 void udelay_masked(unsigned long usec)
@@ -134,10 +124,10 @@ void udelay_masked(unsigned long usec)
 
 	if (usec >= 1000) {
 		tmo = usec / 1000;
-		tmo *= (timer_load_val * 100);
+		tmo *= (gd->timer_rate_hz * 100);
 		tmo /= 1000;
 	} else {
-		tmo = usec * (timer_load_val * 100);
+		tmo = usec * (gd->timer_rate_hz * 100);
 		tmo /= (1000 * 1000);
 	}
 
@@ -157,16 +147,16 @@ unsigned long long get_ticks(void)
 {
 	ulong now = READ_TIMER();
 
-	if (lastdec >= now) {
+	if (gd->lastinc >= now) {
 		/* normal mode */
-		timestamp += lastdec - now;
+		gd->timer_reset_value += gd->lastinc - now;
 	} else {
 		/* we have an overflow ... */
-		timestamp += lastdec + timer_load_val - now;
+		gd->timer_reset_value += gd->lastinc + gd->timer_rate_hz - now;
 	}
-	lastdec = now;
+	gd->lastinc = now;
 
-	return timestamp;
+	return gd->timer_reset_value;
 }
 
 /*
@@ -178,7 +168,7 @@ ulong get_tbclk(void)
 	ulong tbclk;
 
 #if defined(CONFIG_SMDK2400)
-	tbclk = timer_load_val * 100;
+	tbclk = gd->timer_rate_hz * 100;
 #elif defined(CONFIG_SBC2410X) || \
       defined(CONFIG_SMDK2410) || \
 	defined(CONFIG_S3C2440) || \

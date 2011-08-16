@@ -195,8 +195,9 @@ copyex:
 	mov r2, #MDIV_405
 	add r2, r2, #PSDIV_405
 	str r2, [r1, #0x04]
+# endif
 
-# else
+# ifdef CONFIG_S3C2410
 	/* FCLK:HCLK:PCLK = 1:2:4 */
 	/* default FCLK is 120 MHz ! */
 	ldr	r0, =CLKDIVN

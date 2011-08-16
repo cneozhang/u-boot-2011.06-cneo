@@ -160,7 +160,7 @@ int board_eth_init(bd_t *bis)
 
 /*
  * Hardcoded flash setup:
- * Flash 0 is a non-CFI AMD AM29LV800BB flash.
+ * Flash 0 is a non-CFI SST39VF1601 flash.
  */
 ulong board_flash_get_legacy(ulong base, int banknum, flash_info_t *info)
 {

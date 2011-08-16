@@ -1632,6 +1632,11 @@ static int cmdset_amd_init(flash_info_t *info, struct cfi_qry *qry)
 }
 
 #ifdef CONFIG_FLASH_CFI_LEGACY
+/*
+ * Get manufacturer's ID and device ID, fill:
+ * info->manufacturer_id
+ * info->device_id
+ */
 static void flash_read_jedec_ids (flash_info_t * info)
 {
 	info->manufacturer_id = 0;
@@ -1884,7 +1889,7 @@ static void flash_fixup_stm(flash_info_t *info, struct cfi_qry *qry)
  */
 ulong flash_get_size (phys_addr_t base, int banknum)
 {
-	flash_info_t *info = &flash_info[banknum];
+	flash_info_t *info = &flash_info[banknum]; /* flash chip information list */
 	int i, j;
 	flash_sect_t sect_cnt;
 	phys_addr_t sector;
@@ -1893,7 +1898,7 @@ ulong flash_get_size (phys_addr_t base, int banknum)
 	uchar num_erase_regions;
 	int erase_region_size;
 	int erase_region_count;
-	struct cfi_qry qry;
+	struct cfi_qry qry; /* CFI standard query structure */
 	unsigned long max_size;
 
 	memset(&qry, 0, sizeof(qry));
@@ -1903,7 +1908,7 @@ ulong flash_get_size (phys_addr_t base, int banknum)
 #ifdef CONFIG_SYS_FLASH_PROTECTION
 	info->legacy_unlock = 0;
 #endif
-
+	/* virtual sector start address */
 	info->start[0] = (ulong)map_physmem(base, info->portwidth, MAP_NOCACHE);
 
 	if (flash_detect_cfi (info, &qry)) {
@@ -2172,6 +2177,7 @@ unsigned long flash_init (void)
 
 		if (!flash_detect_legacy(cfi_flash_bank_addr(i), i))
 			flash_get_size(cfi_flash_bank_addr(i), i);
+		
 		size += flash_info[i].size;
 		if (flash_info[i].flash_id == FLASH_UNKNOWN) {
 #ifndef CONFIG_SYS_FLASH_QUIET_TEST

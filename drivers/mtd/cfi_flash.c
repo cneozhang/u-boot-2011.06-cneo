@@ -2176,7 +2176,7 @@ unsigned long flash_init (void)
 					 cfi_flash_config_reg(i));
 
 		if (!flash_detect_legacy(cfi_flash_bank_addr(i), i))
-			flash_get_size(cfi_flash_bank_addr(i), i);
+			flash_get_size(cfi_flash_bank_addr(i), i);/* if not jedec device, use cfi detect */
 		
 		size += flash_info[i].size;
 		if (flash_info[i].flash_id == FLASH_UNKNOWN) {

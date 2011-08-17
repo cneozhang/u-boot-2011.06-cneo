@@ -366,6 +366,9 @@ static void nand_print_info(int idx)
 {
 	nand_info_t *nand = &nand_info[idx];
 	struct nand_chip *chip = nand->priv;
+
+	printf ("Manufacturer ID: 0x%02x, Chip ID: 0x%02x (%s %s)\n", 
+					chip->manuf->id, chip->dev->id, chip->manuf->name, chip->dev->name);
 	printf("Device %d: ", idx);
 	if (chip->numchips > 1)
 		printf("%dx ", chip->numchips);

@@ -495,6 +495,9 @@ struct nand_chip {
 
 	struct nand_bbt_descr	*badblock_pattern;
 
+	struct nand_manufacturers *manuf; /*cneozhang*/
+	struct nand_flash_dev *dev; /*cneozhang */
+
 	void		*priv;
 };
 

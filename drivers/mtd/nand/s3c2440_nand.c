@@ -60,25 +60,25 @@ static void s3c2440_hwcontrol(struct mtd_info *mtd, int cmd, unsigned int ctrl)
  
     debugX(1,"hwcontrol(): 0x%02x 0x%02x\n", cmd, ctrl);
  
-    if (ctrl &NAND_CTRL_CHANGE) {
-           ulong IO_ADDR_W = (ulong)nand;
-           if (!(ctrl &NAND_CLE))
-               IO_ADDR_W|= S3C2440_ADDR_NCLE;
+    if (ctrl & NAND_CTRL_CHANGE) {
+    	ulong IO_ADDR_W = (ulong)nand;
+        if (!(ctrl & NAND_CLE))
+            IO_ADDR_W |= S3C2440_ADDR_NCLE;
  
-           if (!(ctrl &NAND_ALE))
-               IO_ADDR_W|= S3C2440_ADDR_NALE;
+        if (!(ctrl & NAND_ALE))
+            IO_ADDR_W |= S3C2440_ADDR_NALE;
  
-           if(cmd ==NAND_CMD_NONE)
-               IO_ADDR_W = &nand->nfdata;
+        if(cmd == NAND_CMD_NONE)
+            IO_ADDR_W = &nand->nfdata;
  
-           chip->IO_ADDR_W= (void *)IO_ADDR_W;
+        chip->IO_ADDR_W = (void *)IO_ADDR_W;
  
-           if (ctrl &NAND_NCE)
-               writel(readl(&nand->nfconf)& ~S3C2440_NFCONT_nCE,
-                      &nand->nfconf);
-           else
-               writel(readl(&nand->nfconf)| S3C2440_NFCONT_nCE,
-                      &nand->nfconf);
+        if (ctrl & NAND_NCE)
+            writel(readl(&nand->nfcont)& ~S3C2440_NFCONT_nCE,
+                &nand->nfcont);
+        else
+            writel(readl(&nand->nfcont)| S3C2440_NFCONT_nCE,
+                &nand->nfcont);
     }
  
     if (cmd !=NAND_CMD_NONE)
@@ -100,7 +100,7 @@ void s3c2440_nand_enable_hwecc(struct mtd_info *mtd, int mode)
 	debugX(1, "s3c2440_nand_enable_hwecc(%p, %d)\n", mtd, mode);
 	writel(readl(&nand->nfcont) | S3C2440_NFCONT_INITECC, &nand->nfcont);
 }
-/* 硬件ECC还未完成 */
+
 static int s3c2440_nand_calculate_ecc(struct mtd_info *mtd, const u_char *dat,
 				      u_char *ecc_code)
 {
@@ -136,6 +136,7 @@ int board_nand_init(struct nand_chip *nand)
     struct s3c2440_nand *nand_reg = s3c2440_get_base_nand();
  
     debugX(1,"board_nand_init()\n");
+	/* Enable NAND flash clk */
     writel(readl(&clk_power->clkcon) |(1 << 4), &clk_power->clkcon);
  
     /* initialize hardware */

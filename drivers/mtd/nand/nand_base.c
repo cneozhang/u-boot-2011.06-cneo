@@ -2602,8 +2602,10 @@ static const struct nand_flash_dev *nand_get_flash_type(struct mtd_info *mtd,
 		return ERR_PTR(-ENODEV);
 	}
 
-	if (!mtd->name)
+	if (!mtd->name){
 		mtd->name = type->name;
+		chip->dev = type;
+		}
 
 	chip->chipsize = (uint64_t)type->chipsize << 20;
 	chip->onfi_version = 0;
@@ -2627,6 +2629,7 @@ static const struct nand_flash_dev *nand_get_flash_type(struct mtd_info *mtd,
 			break;
 	}
 
+	chip->manuf = &nand_manuf_ids[maf_idx];
 	/*
 	 * Check, if buswidth is correct. Hardware drivers should set
 	 * chip correct !
@@ -2675,7 +2678,8 @@ static const struct nand_flash_dev *nand_get_flash_type(struct mtd_info *mtd,
 
 	MTDDEBUG (MTD_DEBUG_LEVEL0, "NAND device: Manufacturer ID:"
 		  " 0x%02x, Chip ID: 0x%02x (%s %s)\n", *maf_id, *dev_id,
-		  nand_manuf_ids[maf_idx].name, type->name);
+		  chip->manuf->name, chip->dev->name);
+//		  nand_manuf_ids[maf_idx].name, type->name);
 
 	return type;
 }

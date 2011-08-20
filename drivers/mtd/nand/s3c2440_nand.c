@@ -97,19 +97,27 @@ static int s3c2440_dev_ready(struct mtd_info *mtd)
 void s3c2440_nand_enable_hwecc(struct mtd_info *mtd, int mode)
 {
 	struct s3c2440_nand *nand = s3c2440_get_base_nand();
-	debugX(1, "s3c2440_nand_enable_hwecc(%p, %d)\n", mtd, mode);
+	debugX(1, "s3c2440_nand_init_hwecc(%p, %d)\n", mtd, mode);
+	/* init ecc */
 	writel(readl(&nand->nfcont) | S3C2440_NFCONT_INITECC, &nand->nfcont);
+	/* unlock main ecc */
+	writel(readl(&nand->nfcont) & ~S3C2440_NFCONT_MECCL, &nand->nfcont); 
 }
 
 static int s3c2440_nand_calculate_ecc(struct mtd_info *mtd, const u_char *dat,
 				      u_char *ecc_code)
 {
 	struct s3c2440_nand *nand = s3c2440_get_base_nand();
-	ecc_code[0] = readb(&nand->nfeccd0);
-	ecc_code[1] = readb(&nand->nfeccd0 + 1);
-	ecc_code[2] = readb(&nand->nfeccd0 + 2);
-	debugX(1, "s3c2440_nand_calculate_hwecc(%p,): 0x%02x 0x%02x 0x%02x\n",
-	       mtd , ecc_code[0], ecc_code[1], ecc_code[2]);
+
+	/* lock main ecc */
+	writel(readl(&nand->nfcont) | S3C2440_NFCONT_MECCL, &nand->nfcont);
+
+	ecc_code[0] = readb(&nand->nfmecc0);
+	ecc_code[1] = readb(&nand->nfmecc0 + 2);
+	ecc_code[2] = readb(&nand->nfmecc1);
+	ecc_code[3] = readb(&nand->nfmecc1 + 2);
+	debugX(1, "s3c2440_nand_calculate_hwecc(%p,): 0x%02x 0x%02x 0x%02x  0x%02x\n",
+	       mtd , ecc_code[0], ecc_code[1], ecc_code[2], ecc_code[3]);
 
 	return 0;
 }
@@ -117,14 +125,81 @@ static int s3c2440_nand_calculate_ecc(struct mtd_info *mtd, const u_char *dat,
 static int s3c2440_nand_correct_data(struct mtd_info *mtd, u_char *dat,
 				     u_char *read_ecc, u_char *calc_ecc)
 {
+	u_int32_t ecc_stat;
+	u_int32_t err_byte, err_bit;
+	u_int8_t temp;
+	struct s3c2440_nand *nand = s3c2440_get_base_nand();
+
+	writel((u_int32_t)(read_ecc[1]<<16) | read_ecc[0], &nand->nfmeccd0);
+	writel((u_int32_t)(read_ecc[4]<<16) | read_ecc[3], &nand->nfmeccd1);
+
+	ecc_stat = readl(&nand->nfestat0);
+	
+	if((ecc_stat & 0x3)== 0)			/* no error */
+		return 0; 	
+	
+	else if((ecc_stat & 0x3) == 1){		/* 1-bit error */
+		err_byte =~(ecc_stat >> 7); 
+		err_byte &=0x7ff;
+		err_bit =~(ecc_stat>>4));
+		err_bit &=0x7;
+		
+		temp= *(dat+err_byte);
+	
+		temp = (temp&(1<<err_bit))?(temp&(~(1<<err_bit))):(temp|(1<<err_bit));
+	
+		*(dat+err_byte) = temp; 
+		printf("s3c2440_nand_correct_data,1-bit error and corrected: ");
+		printf("Byte.%d - Bit.%d\n",err_byte,err_bit);
+		return 0;
+	}
+
+	else{								/* error */
+		printf("s3c2440_nand_correct_data: not implemented\n");
+		return -1
+	}
+
+/*	if (read_ecc[0] == calc_ecc[0] &&
+	    read_ecc[1] == calc_ecc[1] &&
+	    read_ecc[2] == calc_ecc[2] &&
+	    read_ecc[3] == calc_ecc[3])
+		return 0;
+
+	printf("s3c2440_nand_correct_data: not implemented\n");
+	return -1;
+*/	
+}
+
+static int s3c2440_nand_calculate_spare_ecc(struct mtd_info *mtd, const u_char *dat,
+				      u_char *ecc_code)
+{
+	struct s3c2440_nand *nand = s3c2440_get_base_nand();
+
+	/* lock spare ecc */
+	writel(readl(&nand->nfcont) | S3C2440_NFCONT_SECCL, &nand->nfcont);
+	
+	ecc_code[0] = readb(&nand->nfsecc);
+	ecc_code[1] = readb(&nand->nfsecc + 2);
+
+	debugX(1, "s3c2440_nand_calculate_spare_ecc(%p,): 0x%02x 0x%02x\n",
+	       mtd , ecc_code[0], ecc_code[2]);
+
+	return 0;
+}
+
+static int s3c2440_nand_correct_spare_data(struct mtd_info *mtd, u_char *dat,
+				     u_char *read_ecc, u_char *calc_ecc)
+{
 	if (read_ecc[0] == calc_ecc[0] &&
 	    read_ecc[1] == calc_ecc[1] &&
-	    read_ecc[2] == calc_ecc[2])
+	    read_ecc[2] == calc_ecc[2] &&
+	    read_ecc[3] == calc_ecc[3])
 		return 0;
 
 	printf("s3c2440_nand_correct_data: not implemented\n");
 	return -1;
 }
+
 #endif
 
 int board_nand_init(struct nand_chip *nand)

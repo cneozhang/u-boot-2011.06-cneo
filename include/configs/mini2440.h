@@ -191,9 +191,12 @@
 #define CONFIG_SYS_FLASH_BANKS_LIST     { CONFIG_SYS_FLASH_BASE }
 #define CONFIG_SYS_MAX_FLASH_SECT	(512)
 
-#define CONFIG_ENV_ADDR			(CONFIG_SYS_FLASH_BASE + 0x1f0000) /* at the end block */
-#define CONFIG_ENV_IS_IN_FLASH
-#define CONFIG_ENV_SIZE			0x10000
+//#define CONFIG_ENV_ADDR			(CONFIG_SYS_FLASH_BASE + 0x1f0000) /* at the end block */
+//#define CONFIG_ENV_IS_IN_FLASH
+//#define CONFIG_ENV_SIZE			0x10000
+#define CONFIG_ENV_IS_IN_NAND 1
+#define CONFIG_ENV_OFFSET 0X60000
+#define CONFIG_ENV_SIZE			0x20000	/* Total Size of Environment Sector */
 /* allow to overwrite serial and ethaddr */
 #define CONFIG_ENV_OVERWRITE
 
@@ -213,12 +216,15 @@
 //#define CONFIG_MTD_DEBUG /* MTD device debug information enable */
 //#define CONFIG_MTD_DEBUG_VERBOSE 3
 #define CONFIG_NAND_S3C2440
-//#define CONFIG_S3C2440_NAND_HWECC
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
-#define NAND_MAX_CHIPS			1
+#define NAND_MAX_CHIPS				1
 #define CONFIG_SYS_NAND_BASE		0x4E000000
-#define CONFIG_MTD_NAND_VERIFY_WRITE    1
 
+#define CONFIG_S3C2440_NAND_HWECC
+#define CONFIG_SYS_NAND_ECCSIZE		2048
+#define	CONFIG_SYS_NAND_ECCBYTES	4
+
+#define CONFIG_MTD_NAND_VERIFY_WRITE    1
 
 #endif
 

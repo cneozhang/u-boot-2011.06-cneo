@@ -165,17 +165,22 @@ struct s3c2410_nand {
 #ifdef CONFIG_S3C2440
 /* NAND FLASH (see S3C2440 manual chapter 6) */
 struct s3c2440_nand {
-	u32	nfconf;
-	u32	nfcont;
-	u32	nfcmd;
-	u32	nfaddr;
-	u32	nfdata;
-	u32	nfeccd0;
-	u32	nfeccd1;
-	u32	nfeccd;
-	u32	nfstat;
-	u32	nfstat0;
-	u32	nfstat1;
+	u32	nfconf; 	/* 0x4e000000 */
+	u32	nfcont;		/* 0x4e000004 */
+	u32	nfcmd;		/* 0x4e000008 */
+	u32	nfaddr;		/* 0x4e00000c */
+	u32	nfdata;		/* 0x4e000010 */
+	u32	nfmeccd0;	/* 0x4e000014 */
+	u32	nfmeccd1;	/* 0x4e000018 */
+	u32 nfseccd; 	/* 0x4e00001c */
+	u32	nfstat;		/* 0x4e000020 */
+	u32	nfestat0;	/* 0x4e000024 */
+	u32	nfestat1;	/* 0x4e000028 */
+	u32	nfmecc0;	/* 0x4e00002c */
+	u32 nfmecc1;	/* 0x4e000030 */
+	u32 nfsecc;		/* 0x4e000034 */
+	u32 nfsblk;		/* 0x4e000038 */
+	u32 nfeblk;		/* 0x4e00003c */
 };
 #endif
 

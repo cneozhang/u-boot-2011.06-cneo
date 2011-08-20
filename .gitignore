@@ -14,7 +14,7 @@
 *.swp
 *.patch
 *.bin
-
+*.bak
 #
 # Top-level generic files
 #

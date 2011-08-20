@@ -80,7 +80,7 @@ static struct nand_ecclayout nand_oob_16 = {
 		{.offset = 8,
 		 . length = 8}}
 };
-
+#ifndef CONFIG_S3C2440_NAND_HWECC
 static struct nand_ecclayout nand_oob_64 = {
 	.eccbytes = 24,
 	.eccpos = {
@@ -91,6 +91,19 @@ static struct nand_ecclayout nand_oob_64 = {
 		{.offset = 2,
 		 .length = 38}}
 };
+
+#else
+
+static struct nand_ecclayout nand_oob_64 = {
+	.eccbytes = 4,
+	.eccpos = {
+		    60, 61, 62, 63},
+	.oobfree = {
+		{.offset = 2,
+		 .length = 58}}
+};
+
+#endif
 
 static struct nand_ecclayout nand_oob_128 = {
 	.eccbytes = 48,
@@ -2514,6 +2527,7 @@ static void nand_flash_detect_non_onfi(struct mtd_info *mtd,
 		chip->cellinfo = chip->read_byte(mtd);
 		/* The 4th id byte is the important one */
 		extid = chip->read_byte(mtd);
+		MTDDEBUG (MTD_DEBUG_LEVEL0, "NAND device: Extern ID: 0x%02x\n", extid);	
 		/* Calc pagesize */
 		mtd->writesize = 1024 << (extid & 0x3);
 		extid >>= 2;
@@ -2562,8 +2576,7 @@ static const struct nand_flash_dev *nand_get_flash_type(struct mtd_info *mtd,
 	chip->cmdfunc(mtd, NAND_CMD_READID, 0x00, -1);
 
 	/* Read manufacturer and device IDs */
-	*maf_id = chip->read_byte(mtd);
-	*dev_id = chip->read_byte(mtd);
+	*maf_id = *dev_id = chip->read_byte(mtd);
 
 	/* Try again to make sure, as some systems the bus-hold or other
 	 * interface concerns can cause random data which looks like a

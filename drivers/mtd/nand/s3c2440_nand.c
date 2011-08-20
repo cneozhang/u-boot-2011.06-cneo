@@ -141,7 +141,7 @@ static int s3c2440_nand_correct_data(struct mtd_info *mtd, u_char *dat,
 	else if((ecc_stat & 0x3) == 1){		/* 1-bit error */
 		err_byte =~(ecc_stat >> 7); 
 		err_byte &=0x7ff;
-		err_bit =~(ecc_stat>>4));
+		err_bit =~(ecc_stat>>4);
 		err_bit &=0x7;
 		
 		temp= *(dat+err_byte);
@@ -156,7 +156,13 @@ static int s3c2440_nand_correct_data(struct mtd_info *mtd, u_char *dat,
 
 	else{								/* error */
 		printf("s3c2440_nand_correct_data: not implemented\n");
-		return -1
+		printf("calc_ecc[0],calc_ecc[1],calc_ecc[2],calc_ecc[3]:"
+			"0x%02x, 0x%02x, 0x%02x, 0x%02x\n",
+			calc_ecc[0],calc_ecc[1],calc_ecc[2],calc_ecc[3]);
+		printf("read_ecc[0],read_ecc[1],read_ecc[2],read_ecc[3]:"
+			"0x%02x, 0x%02x, 0x%02x, 0x%02x\n",
+			read_ecc[0],read_ecc[1],read_ecc[2],read_ecc[3]);
+		return -1;
 	}
 
 /*	if (read_ecc[0] == calc_ecc[0] &&

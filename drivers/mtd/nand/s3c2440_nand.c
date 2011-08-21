@@ -101,21 +101,23 @@ void s3c2440_nand_enable_hwecc(struct mtd_info *mtd, int mode)
 	/* init ecc */
 	writel(readl(&nand->nfcont) | S3C2440_NFCONT_INITECC, &nand->nfcont);
 	/* unlock main ecc */
-	writel(readl(&nand->nfcont) & ~S3C2440_NFCONT_MECCL, &nand->nfcont); 
+	writel(readl(&nand->nfcont) & (~S3C2440_NFCONT_MECCL), &nand->nfcont); 
 }
 
 static int s3c2440_nand_calculate_ecc(struct mtd_info *mtd, const u_char *dat,
 				      u_char *ecc_code)
 {
+	u_int32_t ecc;
 	struct s3c2440_nand *nand = s3c2440_get_base_nand();
 
 	/* lock main ecc */
 	writel(readl(&nand->nfcont) | S3C2440_NFCONT_MECCL, &nand->nfcont);
 
-	ecc_code[0] = readb(&nand->nfmecc0);
-	ecc_code[1] = readb(&nand->nfmecc0 + 2);
-	ecc_code[2] = readb(&nand->nfmecc1);
-	ecc_code[3] = readb(&nand->nfmecc1 + 2);
+	ecc = readl(&nand->nfmecc0);
+	ecc_code[0] = (u_int8_t)(ecc&0x000000ff);
+	ecc_code[1] = (u_int8_t)((ecc&0x0000ff00)>>8);
+	ecc_code[2] = (u_int8_t)((ecc&0x00ff0000)>>16);
+	ecc_code[3] = (u_int8_t)((ecc&0xff000000)>>24);
 	debugX(1, "s3c2440_nand_calculate_hwecc(%p,): 0x%02x 0x%02x 0x%02x  0x%02x\n",
 	       mtd , ecc_code[0], ecc_code[1], ecc_code[2], ecc_code[3]);
 
@@ -125,6 +127,7 @@ static int s3c2440_nand_calculate_ecc(struct mtd_info *mtd, const u_char *dat,
 static int s3c2440_nand_correct_data(struct mtd_info *mtd, u_char *dat,
 				     u_char *read_ecc, u_char *calc_ecc)
 {
+#if 0
 	u_int32_t ecc_stat;
 	u_int32_t err_byte, err_bit;
 	u_int8_t temp;
@@ -164,8 +167,8 @@ static int s3c2440_nand_correct_data(struct mtd_info *mtd, u_char *dat,
 			read_ecc[0],read_ecc[1],read_ecc[2],read_ecc[3]);
 		return -1;
 	}
-
-/*	if (read_ecc[0] == calc_ecc[0] &&
+#else
+	if (read_ecc[0] == calc_ecc[0] &&
 	    read_ecc[1] == calc_ecc[1] &&
 	    read_ecc[2] == calc_ecc[2] &&
 	    read_ecc[3] == calc_ecc[3])
@@ -173,7 +176,7 @@ static int s3c2440_nand_correct_data(struct mtd_info *mtd, u_char *dat,
 
 	printf("s3c2440_nand_correct_data: not implemented\n");
 	return -1;
-*/	
+#endif
 }
 
 static int s3c2440_nand_calculate_spare_ecc(struct mtd_info *mtd, const u_char *dat,

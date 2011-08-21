@@ -2526,19 +2526,19 @@ static void nand_flash_detect_non_onfi(struct mtd_info *mtd,
 		/* The 3rd id byte holds MLC / multichip data */
 		chip->cellinfo = chip->read_byte(mtd);
 		/* The 4th id byte is the important one */
-		extid = chip->read_byte(mtd);
+		extid = chip->read_byte(mtd); // 0x95
 		MTDDEBUG (MTD_DEBUG_LEVEL0, "NAND device: Extern ID: 0x%02x\n", extid);	
 		/* Calc pagesize */
-		mtd->writesize = 1024 << (extid & 0x3);
+		mtd->writesize = 1024 << (extid & 0x3); // 2KiB
 		extid >>= 2;
 		/* Calc oobsize */
-		mtd->oobsize = (8 << (extid & 0x01)) * (mtd->writesize >> 9);
+		mtd->oobsize = (8 << (extid & 0x01)) * (mtd->writesize >> 9); // 64B
 		extid >>= 2;
 		/* Calc blocksize. Blocksize is multiples of 64KiB */
-		mtd->erasesize = (64 * 1024) << (extid & 0x03);
+		mtd->erasesize = (64 * 1024) << (extid & 0x03); // 128KiB
 		extid >>= 2;
 		/* Get buswidth information */
-		*busw = (extid & 0x01) ? NAND_BUSWIDTH_16 : 0;
+		*busw = (extid & 0x01) ? NAND_BUSWIDTH_16 : 0;// 0
 
 	} else {
 		/*
@@ -2692,7 +2692,7 @@ static const struct nand_flash_dev *nand_get_flash_type(struct mtd_info *mtd,
 
 	MTDDEBUG (MTD_DEBUG_LEVEL0, "NAND device: Manufacturer ID:"
 		  " 0x%02x, Chip ID: 0x%02x (%s %s)\n", *maf_id, *dev_id,
-		  chip->manuf->name, chip->dev->name);
+		  chip->manuf->name, chip->dev->name); /* cneozhang */
 //		  nand_manuf_ids[maf_idx].name, type->name);
 
 	return type;

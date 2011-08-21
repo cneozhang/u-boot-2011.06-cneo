@@ -960,6 +960,8 @@ static int nand_read_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip,
 		chip->ecc.hwctl(mtd, NAND_ECC_READ);
 		chip->read_buf(mtd, p, eccsize);
 		chip->ecc.calculate(mtd, p, &ecc_calc[i]);
+//        printf("ecc_calc = 0x%02x 0x%02x 0x%02x 0x%02x\n",
+ //           ecc_calc[3],ecc_calc[2],ecc_calc[1],ecc_calc[0]);
 	}
 	chip->read_buf(mtd, chip->oob_poi, mtd->oobsize);
 
@@ -2527,7 +2529,7 @@ static void nand_flash_detect_non_onfi(struct mtd_info *mtd,
 		chip->cellinfo = chip->read_byte(mtd);
 		/* The 4th id byte is the important one */
 		extid = chip->read_byte(mtd); // 0x95
-		MTDDEBUG (MTD_DEBUG_LEVEL0, "NAND device: Extern ID: 0x%02x\n", extid);	
+		MTDDEBUG (MTD_DEBUG_LEVEL0, "NAND device: Extern ID: 0x%02x\n", extid);
 		/* Calc pagesize */
 		mtd->writesize = 1024 << (extid & 0x3); // 2KiB
 		extid >>= 2;

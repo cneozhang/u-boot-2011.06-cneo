@@ -213,8 +213,6 @@
  * NAND configuration
  */
 #ifdef CONFIG_CMD_NAND
-//#define CONFIG_MTD_DEBUG /* MTD device debug information enable */
-//#define CONFIG_MTD_DEBUG_VERBOSE 3
 #define CONFIG_NAND_S3C2440
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
 #define NAND_MAX_CHIPS				1

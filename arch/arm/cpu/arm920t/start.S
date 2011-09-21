@@ -214,6 +214,90 @@ copyex:
 	bl	cpu_init_crit
 #endif
 
+#if 0
+/*
+ * Ram mapping
+ */
+ram_mapping:
+	ldr r2, PHYS_SDRAM_1_SIZE /* ram size */
+#if defined(CONFIG_SYS_MEM_TOP_HIDE)
+	/*
+	 * Subtract specified amount of memory to hide so that it won't
+	 * get "touched" at all by U-Boot. By fixing up gd->ram_size
+	 * the Linux kernel should now get passed the now "corrected"
+	 * memory size and won't touch it either. This should work
+	 * for arch/ppc and arch/powerpc. Only Linux board ports in
+	 * arch/powerpc with bootwrapper support, that recalculate the
+	 * memory size from the SDRAM controller setup will have to
+	 * get fixed.
+	 */
+	sub r2, r2,#CONFIG_SYS_MEM_TOP_HIDE
+#endif
+	add r2, r2,#CONFIG_SYS_SDRAM_BASE /* Top of SDRAM address */
+
+#ifdef CONFIG_LOGBUFFER
+#ifndef CONFIG_ALT_LB_ADDR
+	/* reserve kernel log buffer */
+	sub r2, r2, #LOGBUFF_RESERVE
+#endif
+#endif
+
+#ifdef CONFIG_PRAM
+	/* reserve protected RAM */
+	sub r2, r2, (#CONFIG_PRAM << 10) /* CONFIG_PRAM: size of KiB */
+#endif
+
+#if !(defined(CONFIG_SYS_NO_ICACHE) && defined(CONFIG_SYS_NO_DCACHE))
+	/* reserve TLB table */
+	sub r2, r2, #0x4000 /* 4 pages */
+
+	/* round down to next 64 kB limit */
+	bic r2, r2, #0xffff
+
+	ldr r4, r2 /* r4 -> TBL address */
+#endif
+
+	/* round down to next 4 kB limit */
+	bic r2, r2, #0xfff
+
+	/*
+	 * reserve memory for u-boot code, r2 -> u-boot relocation address
+	 */
+	ldr r0, _bss_end_ofs /* monitor size */
+	sub r2, r2, r0
+	bic r2, r2, #0xfff
+
+
+	/* Set up the stack	*/
+stack_setup:
+	ldr	r0, r2
+
+#ifndef CONFIG_PRELOADER
+	/*
+	 * reserve memory for malloc() arena
+	 */
+	sub	r0, r0, #CONFIG_SYS_MALLOC_LEN	/* malloc area */
+
+	/*
+	 * reserved for "global" data, r3 -> gd
+	 */	
+	ldr r3, r0
+	sub	r0, r0, #CONFIG_SYS_GBL_DATA_SIZE
+	ldr r1, r0 /* r1 -> gb */
+
+#ifdef CONFIG_USE_IRQ
+	sub	r0, r0, #(CONFIG_STACKSIZE_IRQ+CONFIG_STACKSIZE_FIQ)
+#endif
+	sub	r0, r0, #12		/* leave 3 words for abort-stack    */
+
+	/* 8-byte alignment for ABI compliance */
+	and sp, r0, #0xfffffff8
+#else
+	add r0, r0, #128;	/* leave 32 words for abort-stack  */
+	and sp, r0, #0xfffffff8
+#endif
+#endif
+
 nor_boot:
 /* Set stackpointer in internal RAM to call board_init_f */
 @call_board_init_f:

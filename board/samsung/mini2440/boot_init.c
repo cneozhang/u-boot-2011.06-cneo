@@ -1,6 +1,8 @@
 #include <common.h>
 #include <s3c2410.h>
 
+DECLARE_GLOBAL_DATA_PTR;
+#if 0
 #define BUSY            1
 
 #define NAND_SECTOR_SIZE    512
@@ -563,4 +565,127 @@ void clock_init(void)
         delay (8000);
     }
 }
+#endif
+
+void board_init_f (ulong bootflag)
+{
+#if 1
+	bd_t *bd;
+	init_fnc_t **init_fnc_ptr;
+	gd_t *id;
+	ulong addr, addr_sp;
+
+	/* Pointer is writable since we allocated a register for it */
+	gd = (gd_t *) ((CONFIG_SYS_INIT_SP_ADDR) & ~0x07);
+	/* compiler optimization barrier needed for GCC >= 3.4 */
+	__asm__ __volatile__("": : :"memory");
+
+	memset ((void*)gd, 0, sizeof (gd_t));
+
+	gd->mon_len = _bss_end_ofs; /* monitor size */
+
+	/* dram_init must store complete ramsize in gd->ram_size */
+	gd->ram_size = PHYS_SDRAM_1_SIZE;
+
+#if defined(CONFIG_SYS_MEM_TOP_HIDE)
+	/*
+	 * Subtract specified amount of memory to hide so that it won't
+	 * get "touched" at all by U-Boot. By fixing up gd->ram_size
+	 * the Linux kernel should now get passed the now "corrected"
+	 * memory size and won't touch it either. This should work
+	 * for arch/ppc and arch/powerpc. Only Linux board ports in
+	 * arch/powerpc with bootwrapper support, that recalculate the
+	 * memory size from the SDRAM controller setup will have to
+	 * get fixed.
+	 */
+	gd->ram_size -= CONFIG_SYS_MEM_TOP_HIDE;
+#endif
+
+	addr = CONFIG_SYS_SDRAM_BASE + gd->ram_size;
+
+#ifdef CONFIG_LOGBUFFER
+#ifndef CONFIG_ALT_LB_ADDR
+	/* reserve kernel log buffer */
+	addr -= (LOGBUFF_RESERVE);
+#endif
+#endif
+
+#ifdef CONFIG_PRAM
+	/*
+	 * reserve protected RAM
+	 */
+	addr -= (CONFIG_PRAM << 10);		/* size is in kB */
+#endif /* CONFIG_PRAM */
+
+#if !(defined(CONFIG_SYS_NO_ICACHE) && defined(CONFIG_SYS_NO_DCACHE))
+	/* reserve TLB table */
+	addr -= (4096 * 4);
+
+	/* round down to next 64 kB limit */
+	addr &= ~(0x10000 - 1);
+
+	gd->tlb_addr = addr;
+#endif
+
+	/* round down to next 4 kB limit */
+	addr &= ~(4096 - 1);
+
+	/*
+	 * reserve memory for U-Boot code, data & bss
+	 * round down to next 4 kB limit
+	 */
+	addr -= gd->mon_len;
+	addr &= ~(4096 - 1);
+
+#ifndef CONFIG_PRELOADER
+	/*
+	 * reserve memory for malloc() arena
+	 */
+	addr_sp = addr - TOTAL_MALLOC_LEN;
+
+	/*
+	 * (permanently) allocate a Board Info struct
+	 * and a permanent copy of the "global" data
+	 */
+	addr_sp -= sizeof (bd_t);
+	bd = (bd_t *) addr_sp;
+	gd->bd = bd;
+
+	addr_sp -= sizeof (gd_t);
+	id = (gd_t *) addr_sp;
+
+	/* setup stackpointer for exeptions */
+	gd->irq_sp = addr_sp;
+#ifdef CONFIG_USE_IRQ
+	addr_sp -= (CONFIG_STACKSIZE_IRQ+CONFIG_STACKSIZE_FIQ);
+#endif
+	/* leave 3 words for abort-stack    */
+	addr_sp -= 12;
+
+	/* 8-byte alignment for ABI compliance */
+	addr_sp &= ~0x07;
+#else
+	addr_sp += 128;	/* leave 32 words for abort-stack   */
+	gd->irq_sp = addr_sp;
+#endif
+
+#ifdef CONFIG_POST
+	post_bootmode_init();
+	post_run (NULL, POST_ROM | post_bootmode_get(0));
+#endif
+
+	gd->relocaddr = addr; /* U-BOOT relocate addr */
+	gd->start_addr_sp = addr_sp;
+	gd->reloc_off = addr - _TEXT_BASE;
+	memcpy (id, (void *)gd, sizeof (gd_t));
+
+	relocate_code (addr_sp, id, addr);
+
+	/* NOTREACHED - relocate_code() does not return */
+#else
+	relocate_code (CONFIG_SYS_TEXT_BASE - TOTAL_MALLOC_LEN, NULL,
+		       CONFIG_SYS_TEXT_BASE);
+#endif
+}
+
 

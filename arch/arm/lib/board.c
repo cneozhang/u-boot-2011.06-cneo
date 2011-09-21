@@ -264,7 +264,7 @@ init_fnc_t *init_sequence[] = {
 	dram_init,		/* configure available RAM banks */
 	NULL,
 };
-
+#if 0
 void board_init_f (ulong bootflag)
 {
 	bd_t *bd;
@@ -385,7 +385,7 @@ void board_init_f (ulong bootflag)
 	gd->irq_sp = addr_sp;
 #ifdef CONFIG_USE_IRQ
 	addr_sp -= (CONFIG_STACKSIZE_IRQ+CONFIG_STACKSIZE_FIQ);
-	debug ("Reserving %zu Bytes for IRQ stack at: %08lx\n",
+	debug ("Reserving %zu Bytes for IRQ/FIQ stack at: %08lx\n",
 		CONFIG_STACKSIZE_IRQ+CONFIG_STACKSIZE_FIQ, addr_sp);
 #endif
 	/* leave 3 words for abort-stack    */
@@ -420,7 +420,7 @@ void board_init_f (ulong bootflag)
 
 	/* NOTREACHED - relocate_code() does not return */
 }
-
+#endif
 #if !defined(CONFIG_SYS_NO_FLASH)
 static char *failed = "*** failed ***\n";
 #endif

@@ -204,7 +204,9 @@
  * Size of malloc() pool
  * BZIP2 / LZO / LZMA need a lot of RAM
  */
-#define CONFIG_SYS_MALLOC_LEN	(4 * 1024 * 1024)
+//#define CONFIG_SYS_MALLOC_LEN	(4 * 1024 * 1024)
+#define CONFIG_SYS_MALLOC_LEN	(CONFIG_ENV_SIZE + 128*1024)
+#define CONFIG_SYS_GBL_DATA_SIZE	128	/* reserve 128 Bytes for bd and gd */
 
 #define CONFIG_SYS_MONITOR_LEN	(448 * 1024)
 #define CONFIG_SYS_MONITOR_BASE	CONFIG_SYS_FLASH_BASE
